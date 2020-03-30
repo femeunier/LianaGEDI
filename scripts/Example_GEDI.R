@@ -5,6 +5,7 @@ devtools::install_github("carlos-alberto-silva/rGEDI", dependencies = TRUE, forc
 
 # loading rGEDI package
 library(rGEDI)
+library(LianaGEDI)
 
 # Study area boundary box coordinates
 ul_lat<- 9.
