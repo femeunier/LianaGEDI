@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1585585504042.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2168537217",
+    "id" : "A5E52C81",
+    "lastKnownWriteTime" : 1585585500,
+    "last_content_update" : 1585585500,
+    "path" : "~/Documents/projects/LianaGEDI/R/hello.R",
+    "project_path" : "R/hello.R",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,7 @@
+rm(list = ls())
+
+library(devtools)
+devtools::install_github("carlos-alberto-silva/rGEDI", dependencies = TRUE)
+
+# loading rGEDI package
+library(rGEDI)
