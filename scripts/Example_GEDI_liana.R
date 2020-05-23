@@ -1,53 +1,92 @@
 rm(list = ls())
 
-library(devtools)
-devtools::install_github("carlos-alberto-silva/rGEDI", dependencies = TRUE,force =TRUE)
+# library(devtools)
+# devtools::install_github("carlos-alberto-silva/rGEDI", dependencies = TRUE)
 
 # loading rGEDI package
 library(rGEDI)
 library(LianaGEDI)
+library(dplyr)
+library(ggplot2)
 
 # Study area boundary box coordinates
-ul_lat<- 9.
-lr_lat<- 9.3
-ul_lon<- -79.8
-lr_lon<- -79.9
+# site.name <- "BCI"
+# ul_lat<- 9.1
+# lr_lat<- 9.2
+# ul_lon<- -79.8
+# lr_lon<- -79.9
 
-# ul_lat<- -44.0654
-# lr_lat<- -44.17246
-# ul_lon<- -13.76913
-# lr_lon<- -13.67646
+site.name <- "Paracou"
+ul_lat<- 5.2
+lr_lat<- 5.4
+ul_lon<- -52.8
+lr_lon<- -53
+
+# site.name <- "Gigante"
+# ul_lat<- 9.05
+# lr_lat<- 9.1
+# ul_lon<- -79.85
+# lr_lon<- -79.9
 
 # Get path to GEDI data
-gLevel1B<-gedifinder(product="GEDI01_B",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
-gLevel2A<-gedifinder(product="GEDI02_A",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
-gLevel2B<-gedifinder(product="GEDI02_B",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
+gLevel1B <- gedifinder(product="GEDI01_B",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
+gLevel2A <- gedifinder(product="GEDI02_A",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
+gLevel2B <- gedifinder(product="GEDI02_B",ul_lat, ul_lon, lr_lat, lr_lon,version="001")
 
 # Set output dir for downloading the files
-outdir=file.path(getwd(),"data")
+# outdir=file.path(getwd(),"data")
+outdir <- file.path("/data/gent/vo/000/gvo00074/felicien/dataGEDI/",site.name)
+# if(!exists(outdir)) dir.create(outdir)
 
 # Downloading GEDI data
 # LianaGEDI::gediDownload(filepath=gLevel1B,outdir=outdir)
 # LianaGEDI::gediDownload(filepath=gLevel2A,outdir=outdir)
 # LianaGEDI::gediDownload(filepath=gLevel2B,outdir=outdir)
 
-#** Herein, we are using only a GEDI sample dataset for this tutorial.
-# downloading zip file
-# download.file("https://github.com/carlos-alberto-silva/rGEDI/releases/download/datasets/examples.zip",destfile=file.path(outdir, "examples.zip"))
-
-# unzip file
-# unzip(file.path(outdir,"examples.zip"),exdir=outdir)
-
 # Reading GEDI data
-gedilevel1b<-readLevel1B(level1Bpath = "/data/gent/vo/000/gvo00074/felicien/dataGEDI/GEDI01_B_2019138232137_O02440_T00856_02_003_01.h5")
-gedilevel1b<-readLevel1B(level1Bpath = "/data/gent/vo/000/gvo00074/felicien/dataGEDI/GEDI01_B_2019138232137_O02440_T00856_02_003_01.h5")
+for (ifile in seq(1,length(gLevel1B))){
+ gedilevel1b<-readLevel1B(level1Bpath = file.path(outdir,basename(gLevel1B[ifile])))
+ clipLevel1B(gedilevel1b,lr_lon,ul_lon,ul_lat,lr_lat,file.path(outdir,paste0(sub('\\.h5$','',basename(gLevel1B[ifile])),"_sub.h5")))
+}
 
-gedilevel2a<-readLevel2A(level2Apath = paste0(outdir,"/GEDI02_A_2019108080338_O01964_T05337_02_001_01_sub.h5"))
-gedilevel2b<-readLevel2B(level2Bpath = paste0(outdir,"/GEDI02_B_2019108080338_O01964_T05337_02_001_01_sub.h5"))
+for (ifile in seq(1,length(gLevel2A))){
+  gedilevel2a<-readLevel2A(level2Apath = file.path(outdir,basename(gLevel2A[ifile])))
+  clipLevel2A(gedilevel2a,lr_lon,ul_lon,ul_lat,lr_lat,file.path(outdir,paste0(sub('\\.h5$','',basename(gLevel2A[ifile])),"_sub.h5")))
+}
 
-level1bGeo<-getLevel1BGeo(level1b=gedilevel1b,select=c("elevation_bin0"))
+for (ifile in seq(1,length(gLevel2B))){
+  gedilevel2b<-readLevel2B(level2Bpath = file.path(outdir,basename(gLevel2B[ifile])))
+  clipLevel2B(gedilevel2b,lr_lon,ul_lon,ul_lat,lr_lat,file.path(outdir,paste0(sub('\\.h5$','',basename(gLevel2B[ifile])),"_sub.h5")))
+}
+
+# gedilevel2a<-readLevel2A(level2Apath = paste0(outdir,"/GEDI02_A_2019108080338_O01964_T05337_02_001_01_sub.h5"))
+# gedilevel2b<-readLevel2B(level2Bpath = paste0(outdir,"/GEDI02_B_2019108080338_O01964_T05337_02_001_01_sub.h5"))
+
+for (ifile in seq(1,length(gLevel1B))){
+  gedilevel1b<-readLevel1B(level1Bpath = file.path(outdir,basename(gLevel1B[ifile])))
+  level1bGeo<-getLevel1BGeo(level1b=gedilevel1b,select=c("elevation_bin0"))
+  level1bGeo<-getLevel1BGeo(level1b=gedilevel1b,select=c("elevation_bin0"))
+  saveRDS(level1bGeo,file.path(outdir,paste0("level1bGeo",ifile,".RDS")))
+}
+
+# Transfer files
+
+# Read files
+outdir <- file.path(getwd(),"data",site.name)
+for (ifile in seq(1,length(gLevel1B))){
+  level1bGeo_temp <-readRDS(file.path(outdir,paste0("level1bGeo",ifile,".RDS")))
+  if (ifile == 1){
+    level1bGeo <- level1bGeo_temp
+  } else {
+    level1bGeo <- rbind(level1bGeo,level1bGeo_temp)
+  }
+}
+
+level1bGeo <- level1bGeo %>% filter(longitude_bin0 <= ul_lon & longitude_bin0>=lr_lon) %>%
+  filter(latitude_bin0 <= lr_lat & latitude_bin0 >= ul_lat)
+level1bGeo$shot_number<-paste0(level1bGeo$shot_number)
+
 head(level1bGeo)
-
 ##           shot_number latitude_bin0 latitude_lastbin longitude_bin0 longitude_lastbin elevation_bin0
 ##  1: 19640002800109382     -13.75903        -13.75901      -44.17219         -44.17219       784.8348
 ##  2: 19640003000109383     -13.75862        -13.75859      -44.17188         -44.17188       799.0491
@@ -57,10 +96,8 @@ head(level1bGeo)
 ##  6: 19640003800109387     -13.75697        -13.75695      -44.17061         -44.17061       823.2526
 
 # Converting shot_number as "integer64" to "character"
-level1bGeo$shot_number<-paste0(level1bGeo$shot_number)
-level1bGeo <- level1bGeo[(!is.na(level1bGeo$longitude_bin0) & !is.na(level1bGeo$latitude_bin0)),]
-
-level1bGeo <- readRDS("level1bGeo.RDS")
+# level1bGeo$shot_number<-paste0(level1bGeo$shot_number)
+# level1bGeo <- level1bGeo[(!is.na(level1bGeo$longitude_bin0) & !is.na(level1bGeo$latitude_bin0)),]
 
 # Converting level1bGeo as data.table to SpatialPointsDataFrame
 library(sp)
@@ -83,7 +120,27 @@ leaflet() %>%
   addProviderTiles(providers$Esri.WorldImagery) %>%
   addLegend(colors = "red", labels= "Samples",title ="GEDI Level1B")
 
-wf <- getLevel1BWF(gedilevel1b, shot_number="19640521100108408")
+# Host
+host <- list(name = "hpc",tunnel = "/tmp/testpecan")
+
+# Close it first just in case
+system(paste("ssh -S ",host$tunnel,host$name,"-O exit",sep=" "))
+system(paste("ssh -nNf -o ControlMaster=yes -S",host$tunnel,host$name,sep=" "))
+
+script <- list("gedilevel1b <- readLevel1B(level1Bpath = file.path(outdir,'GEDI01_B_2019138232137_O02440_T00856_02_003_01.h5'))",
+               "getLevel1BWF(gedilevel1b, shot_number='24400007800099961')")
+
+run.Rcommand.and.save(script,
+                      name = "wf",
+                      outdir = "/data/gent/vo/000/gvo00074/felicien/dataGEDI/",
+                      host = host)
+
+dummy <- remote.copy.from(host,
+                          src=file.path("/data/gent/vo/000/gvo00074/felicien/dataGEDI/",paste0("wf",".RDS")),
+                          dst=file.path(getwd(),"data"))
+
+wf <- readRDS(file.path(getwd(),"data",paste0("wf",".RDS")))
+
 
 par(mfrow = c(1,2), mar=c(4,4,1,1), cex.axis = 1.5)
 
@@ -96,8 +153,21 @@ grid()
 
 
 # Get GEDI Elevation and Height Metrics
-level2AM<-getLevel2AM(gedilevel2a)
-head(level2AM[,c("beam","shot_number","elev_highestreturn","elev_lowestmode","rh100")])
+script <- list("outdir <- '/data/gent/vo/000/gvo00074/felicien/dataGEDI/Paracou/'",
+               "readLevel2A(level2Apath = paste0(outdir,'/GEDI02_A_2019169195233_O02919_T05406_02_001_01.h5'))")
+
+run.Rcommand.and.save(script,
+                      name = "gedilevel2a",
+                      outdir = "/data/gent/vo/000/gvo00074/felicien/dataGEDI/",
+                      host = host)
+
+dummy <- remote.copy.from(host,
+                          src=file.path("/data/gent/vo/000/gvo00074/felicien/dataGEDI/",paste0("gedilevel2a",".RDS")),
+                          dst=file.path(getwd(),"data"))
+
+gedilevel2a <- readRDS(file.path(getwd(),"data",paste0("gedilevel2a",".RDS")))
+level2AM<-getLevel2AM(level2a = gedilevel2a)
+# head(level2AM[,c("beam","shot_number","elev_highestreturn","elev_lowestmode","rh100")])
 
 ##          beam       shot_number elev_highestreturn elev_lowestmode rh100
 ##  1: BEAM0000 19640002800109382           740.7499        736.3301  4.41
@@ -108,7 +178,7 @@ head(level2AM[,c("beam","shot_number","elev_highestreturn","elev_lowestmode","rh
 ##  6: BEAM0000 19640003800109387           778.7181        773.6990  5.01
 
 # Converting shot_number as "integer64" to "character"
-level2AM$shot_number<-paste0(level2AM$shot_number)
+
 
 # Converting Elevation and Height Metrics as data.table to SpatialPointsDataFrame
 level2AM_spdf<-SpatialPointsDataFrame(cbind(level2AM$lon_lowestmode,level2AM$lat_lowestmode),
@@ -117,7 +187,7 @@ level2AM_spdf<-SpatialPointsDataFrame(cbind(level2AM$lon_lowestmode,level2AM$lat
 # Exporting Elevation and Height Metrics as ESRI Shapefile
 raster::shapefile(level2AM_spdf,paste0(outdir,"\\GEDI02_A_2019108080338_O01964_T05337_02_001_01_sub"))
 
-shot_number = "19640521100108408"
+shot_number = "24400007800099961"
 
 par(mfrow = c(1,1), mar=c(4,4,1,1), cex.axis = 1.5)
 png("fig8.png", width = 8, height = 6, units = 'in', res = 300)
